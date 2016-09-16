@@ -20,7 +20,7 @@
 
 from pysped.nfe import ProcessadorNFe as ProcessadorNFePySped
 from pysped.nfe.danfe import DANFE as DanfePySped
-from pysped.nfe.danfe import DAEDE
+from pysped.nfe.danfe.daede import DAEDE
 
 from .certificado import Certificado
 
