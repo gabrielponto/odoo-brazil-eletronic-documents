@@ -21,7 +21,7 @@ import os
 
 from openerp.tools import config
 from openerp.tools.translate import _
-from openerp.exceptions import RedirectWarning
+from openerp.addons.nfe._openerp.exceptions import RedirectWarning
 from openerp.addons.l10n_br_base.tools.misc import punctuation_rm
 
 

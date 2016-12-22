@@ -17,17 +17,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-from openerp import models, fields, api
+from openerp.osv import osv, fields
 
-
-class NfeInvoiceCancel(models.Model):
+class NfeInvoiceCancel(osv.osv):
     _name = 'nfe.invoice_cancel'
 
-    justificativa = fields.Text('Justificativa', size=255, required=True)
+    _columns = {
+        'justificativa': fields.text('Justificativa', size=255, required=True)
+    }
 
-    @api.multi
-    def _check_name(self):
-        for nfe in self:
+    def _check_name(self, cr, uid, ids, context=None):
+        for nfe in self.browse(cr, uid, ids, context=context):
             if not (len(nfe.justificativa) >= 15):
                 return False
         return True
@@ -37,11 +37,9 @@ class NfeInvoiceCancel(models.Model):
          'Tamanho de justificativa inválida !',
          ['justificativa'])]
 
-    @api.multi
-    def action_enviar_cancelamento(self):
-
-        for cancel in self:
-            obj_invoice = self.env['account.invoice'].browse(
-                self.env.context['active_id'])
-            obj_invoice.cancel_invoice_online(cancel.justificativa)
+    def action_enviar_cancelamento(self, cr, uid, ids, context=None):
+        for cancel in self.browse(cr, uid, ids, context=context):
+            obj_invoice = self.pool['account.invoice'].browse(
+                context['active_id'])
+            obj_invoice.cancel_invoice_online(cr, uid, ids, cancel.justificativa, context=context)
         return {'type': 'ir.actions.act_window_close'}

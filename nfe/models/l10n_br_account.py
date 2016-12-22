@@ -20,8 +20,8 @@
 import datetime
 import logging
 from openerp import netsvc
-from openerp import models, fields, api
-from openerp.exceptions import RedirectWarning
+from openerp.osv import osv, fields
+from openerp.addons.nfe._openerp.exceptions import RedirectWarning
 from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration, validate_nfe_invalidate_number
@@ -29,24 +29,24 @@ from openerp.addons.nfe.sped.nfe.processing.xml import invalidate
 
 _logger = logging.getLogger(__name__)
 
-
-class L10n_brAccountInvoiceInvalidNumber(models.Model):
+class L10n_brAccountInvoiceInvalidNumber(osv.osv):
     _inherit = 'l10n_br_account.invoice.invalid.number'
 
-    state = fields.Selection([('draft', 'Rascunho'),
+    _columns = {
+        'state': fields.selection([('draft', 'Rascunho'),
                               ('not_authorized', 'Não autorizado'),
                               ('done', u'Autorizado Sefaz')],
-                             'Status', required=True)
-    status = fields.Char('Status', size=10, readonly=True)
-    message = fields.Char('Mensagem', size=200, readonly=True)
-    invalid_number_document_event_ids = fields.One2many(
-        'l10n_br_account.document_event',
-        'document_event_ids', u'Eventos',
-        states={'done': [('readonly', True)]}
-    )
+                             'Status', required=True),
+        'status': fields.char('Status', size=10, readonly=True),
+        'message': fields.char('Mensagem', size=200, readonly=True),
+        'invalid_number_document_event_ids': fields.one2many(
+            'l10n_br_account.document_event',
+            'document_event_ids', u'Eventos',
+            states={'done': [('readonly', True)]}
+        )
+    }
 
-    @api.multi
-    def attach_file_event(self, seq, att_type, ext):
+    def attach_file_event(self, cr, uid, ids, seq, att_type, ext, context=None):
         """
         Implemente esse metodo na sua classe de manipulação de arquivos
         :param cr:
@@ -60,10 +60,9 @@ class L10n_brAccountInvoiceInvalidNumber(models.Model):
         """
         return False
 
-    @api.multi
-    def action_draft_done(self):
+    def action_draft_done(self, cr, uid, ids, context=None):
         try:
-            processo = self.send_request_to_sefaz()
+            processo = self.send_request_to_sefaz(cr, uid, ids, context=context)
             values = {
                 'message': processo.resposta.infInut.xMotivo.valor,
             }
@@ -71,23 +70,22 @@ class L10n_brAccountInvoiceInvalidNumber(models.Model):
             if processo.resposta.infInut.cStat.valor == '102':
                 values['state'] = 'done'
                 values['status'] = '102'
-                self.write(values)
-                # context['caminho'] = processo.arquivos[0]['arquivo']
-                self.attach_file_event(None, 'inu', 'xml')
+                self.write(cr, uid, ids, values, context=context)
+                
+                self.attach_file_event(cr, uid, ids, None, 'inu', 'xml', context=context)
             else:
                 values['state'] = 'not_authorized'
                 values['status'] = processo.resposta.infInut.cStat.valor
-                self.write(values)
+                self.write(cr, uid, ids, values, context=context)
 
         except Exception as e:
             raise RedirectWarning(_(u'Erro!'), e.message)
         return True
 
-    @api.multi
-    def send_request_to_sefaz(self):
-        for item in self:
+    def send_request_to_sefaz(self, cr, uid, ids, context=None):
+        for item in self.browse(cr, uid, ids, context=context):
 
-            event_obj = self.env['l10n_br_account.document_event']
+            event_obj = self.pool['l10n_br_account.document_event']
 
             validate_nfe_configuration(item.company_id)
             validate_nfe_invalidate_number(item.company_id, item)
@@ -126,22 +124,21 @@ class L10n_brAccountInvoiceInvalidNumber(models.Model):
                 results.append(vals)
             finally:
                 for result in results:
-                    event_obj.create(result)
+                    event_obj.create(cr, uid, ids, result, context=context)
             return processo
 
 
-class L10n_brAccountInvoiceCancel(models.Model):
+class L10n_brAccountInvoiceCancel(osv.Model):
     _inherit = 'l10n_br_account.invoice.cancel'
 
-    @api.multi
-    def action_draft_done(self):
-        if len(self.ids) == 1:
-            record = self.browse(self.id)
+    def action_draft_done(self, cr, uid, ids, context=None):
+        if len(ids) == 1:
+            record = self.browse(ids[0])
             wf_service = netsvc.LocalService('workflow')
             wf_service.trg_validate('account.invoice',
                                     record.invoice_id.id, 'invoice_cancel')
 
-            self.write({'state': 'done'})
+            self.write(cr, uid, ids, {'state': 'done'})
         else:
             raise RedirectWarning(_(u'Erro!'), _(u'Você pode cancelar '
                                                  u'apenas uma fatura por vez.')
@@ -150,12 +147,11 @@ class L10n_brAccountInvoiceCancel(models.Model):
         return True
 
 
-class L10n_brDocumentEvent(models.Model):
+class L10n_brDocumentEvent(osv.osv):
     _inherit = 'l10n_br_account.document_event'
 
-    @api.multi
-    def set_done(self):
+    def set_done(self, cr, uid, ids, context=None):
         if self is None:
             values = {'state': 'done', 'end_date': datetime.datetime.now()}
-        self.write(values)
+        self.write(cr, uid, ids, values, context=context)
         return True

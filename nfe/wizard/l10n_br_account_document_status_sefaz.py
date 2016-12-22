@@ -17,18 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-from openerp import models, api
-from openerp.osv import orm
+from openerp.osv import orm, osv
 from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.processing.xml import check_key_nfe
 
 
-class L10n_brAccountDocumentStatusSefaz(models.TransientModel):
+class L10n_brAccountDocumentStatusSefaz(osv.TransientModel):
 
-    _inherit = 'l10n_br_account_product.document_status_sefaz'
+    _inherit = 'l10n_br_account.document_status_sefaz'
 
-    @api.multi
-    def get_document_status(self):
+    def get_document_status(self, cr, uid, ids, context=None):
         chave_nfe = self.chNFe
 
         try:
@@ -48,18 +46,18 @@ class L10n_brAccountDocumentStatusSefaz(models.TransientModel):
                 'state': 'done',
             }
 
-            self.write(call_result)
+            self.write(cr, uid, ids, call_result, context=context)
         except Exception as e:
             # fixme:
             raise orm.except_orm(
                 _(u'Erro na consulta da chave!'), e)
 
-        mod_obj = self.env['ir.model.data']
-        act_obj = self.env['ir.actions.act_window']
+        mod_obj = self.pool['ir.model.data']
+        act_obj = self.pool['ir.actions.act_window']
         result = mod_obj.get_object_reference('l10n_br_account_product',
                                               'action_l10n_br_account_product'
                                               '_document_status_sefaz')
         res_id = result and result[1] or False
-        result = act_obj.browse(res_id)
-        result['res_id'] = self.id
+        result = act_obj.browse(cr, uid, ids, res_id, context=context)
+        result['res_id'] = ids[0]
         return result

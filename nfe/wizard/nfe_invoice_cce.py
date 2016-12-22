@@ -19,24 +19,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-from openerp import models, fields, api
+from openerp.osv import osv, fields
 from openerp.addons.nfe.sped.nfe.processing.xml import send_correction_letter
 
 
-class NfeInvoiceCce(models.TransientModel):
+class NfeInvoiceCce(osv.TransientModel):
 
     _name = 'nfe.invoice_cce'
 
-    mensagem = fields.Text('Mensagem', required=True)
+    _columns = {
+        'mensagem': fields.text('Mensagem', required=True)
+    }
 
-    @api.multi
-    def _check_name(self):
-
-        for nfe in self:
-
+    def _check_name(self, cr, uid, ids, context=None):
+        for nfe in self.browse(cr, uid, ids, context=context):
             if not (len(nfe.mensagem) >= 15):
                 return False
-
         return True
 
     _constraints = [
@@ -44,18 +42,16 @@ class NfeInvoiceCce(models.TransientModel):
          'Tamanho de mensagem inválida !',
          ['mensagem'])]
 
-    @api.multi
-    def action_enviar_carta(self):
-
+    def action_enviar_carta(self, cr, uid, ids, context=None):
         correcao = self.mensagem
-        obj_invoice = self.env['account.invoice'].browse(
-            self.env.context['active_id'])
-        obj_cce = self.env['l10n_br_account.invoice.cce']
+        obj_invoice = self.pool['account.invoice'].browse(
+            context.get('active_id'))
+        obj_cce = self.pool['l10n_br_account.invoice.cce']
 
         for invoice in obj_invoice:
             chave_nfe = invoice.nfe_access_key
 
-            event_obj = self.env['l10n_br_account.document_event']
+            event_obj = self.pool['l10n_br_account.document_event']
             domain = [('invoice_id', '=', invoice.id)]
             sequencia = len(obj_cce.search(domain)) + 1
             results = []
@@ -99,8 +95,8 @@ class NfeInvoiceCce(models.TransientModel):
             finally:
                 for result in results:
                     event_obj.create(result)
-                    obj_cce.create({'invoice_id': invoice.id,
+                    obj_cce.create(cr, uid, {'invoice_id': invoice.id,
                                     'motivo': correcao,
                                     'sequencia': sequencia,
-                                    })
+                                    }, context=context)
         return {'type': 'ir.actions.act_window_close'}

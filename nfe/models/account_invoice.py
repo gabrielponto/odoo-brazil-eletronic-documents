@@ -22,8 +22,8 @@ import logging
 import datetime
 
 from openerp.tools.translate import _
-from openerp import models, fields, api
-from openerp.exceptions import RedirectWarning
+from openerp.osv import fields, osv
+from openerp.addons.nfe._openerp.exceptions import RedirectWarning
 
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
 from openerp.addons.nfe.sped.nfe.validator.xml import XMLValidator
@@ -35,15 +35,16 @@ from openerp.addons.nfe.sped.nfe.validator.config_check import \
 _logger = logging.getLogger(__name__)
 
 
-class AccountInvoice(models.Model):
+class AccountInvoice(osv.osv):
     """account_invoice overwritten methods"""
     _inherit = 'account.invoice'
 
-    cce_document_event_ids = fields.One2many(
+    _columns = {
+        'cce_document_event_ids': fields.one2many(
         'l10n_br_account.invoice.cce', 'invoice_id', u'Eventos')
+    }
 
-    @api.multi
-    def attach_file_event(self, seq, att_type, ext):
+    def attach_file_event(self, cr, uid, ids, seq, att_type, ext, context=None):
         """
         Implemente esse metodo na sua classe de manipulação de arquivos
         :param cr:
@@ -60,19 +61,18 @@ class AccountInvoice(models.Model):
     def _get_nfe_factory(self, nfe_version):
         return NfeFactory().get_nfe(nfe_version)
 
-    @api.multi
-    def nfe_export(self):
+    def nfe_export(self, cr, uid, ids, context=None):
 
-        for inv in self:
+        for inv in self.browse(cr, uid, ids):
 
             validate_nfe_configuration(inv.company_id)
 
             nfe_obj = self._get_nfe_factory(inv.nfe_version)
 
             # nfe_obj = NFe310()
-            nfes = nfe_obj.get_xml(self.env.cr, self.env.uid, self.ids,
+            nfes = nfe_obj.get_xml(cr, uid, ids,
                                    int(inv.company_id.nfe_environment),
-                                   self.env.context)
+                                   context)
 
             for nfe in nfes:
                 # erro = nfe_obj.validation(nfe['nfe'])
@@ -105,7 +105,7 @@ class AccountInvoice(models.Model):
                     f.close()
 
                     event_obj = self.env['l10n_br_account.document_event']
-                    event_obj.create({
+                    event_obj.create(cr, uid, {
                         'type': '0',
                         'company_id': inv.company_id.id,
                         'origin': '[NF-E]' + inv.internal_number,
@@ -113,18 +113,21 @@ class AccountInvoice(models.Model):
                         'create_date': datetime.datetime.now(),
                         'state': 'draft',
                         'document_event_ids': inv.id
-                    })
-                    inv.write({'state': 'sefaz_export'})
+                    }, context=context)
+                    inv.write(cr, uid, [inv.id], {'state': 'sefaz_export'}, context=context)
 
-    @api.multi
-    def action_invoice_send_nfe(self):
+    def action_invoice_send_nfe(self, cr, uid, ids, context=None):
 
-        for inv in self:
+        for inv in self.browse(cr, uid, ids, context=context):
 
-            event_obj = self.env['l10n_br_account.document_event']
-            event = max(
-                event_obj.search([('document_event_ids', '=', inv.id),
-                                  ('type', '=', '0')]))
+            event_obj = self.pool['l10n_br_account.document_event']
+            try:
+                event = max(
+                    event_obj.search(cr, uid, [('document_event_ids', '=', inv.id),
+                                    ('type', '=', '0')]))
+            except ValueError:
+                raise osv.except_osv('Erro', u'Você deve exportar o XML da Nota Fiscal Primeiro')
+            event = event_obj.browse(cr, uid, event, context=context)
             arquivo = event.file_sent
             nfe_obj = self._get_nfe_factory(inv.nfe_version)
 
@@ -164,15 +167,15 @@ class AccountInvoice(models.Model):
                             elif prot.infProt.cStat.valor in ('110', '301',
                                                               '302'):
                                 protNFe["state"] = 'sefaz_denied'
-                        self.attach_file_event(None, 'nfe', 'xml')
-                        self.attach_file_event(None, None, 'pdf')
+                        self.attach_file_event(cr, uid, ids, None, 'nfe', 'xml', context=context)
+                        self.attach_file_event(cr, uid, ids, None, None, 'pdf', context=context)
             except Exception as e:
                 _logger.error(e.message, exc_info=True)
                 vals = {
                     'type': '-1',
                     'status': '000',
                     'response': 'response',
-                    'company_id': self.company_id.id,
+                    'company_id': inv.company_id.id,
                     'origin': '[NF-E]' + inv.internal_number,
                     'file_sent': 'False',
                     'file_returned': 'False',
@@ -184,11 +187,11 @@ class AccountInvoice(models.Model):
             finally:
                 for result in results:
                     if result['type'] == '0':
-                        event_obj.write(result)
+                        event_obj.write(cr, uid, [event_obj.id], result, context=context)
                     else:
-                        event_obj.create(result)
+                        event_obj.create(cr, uid, result, context=context)
 
-                self.write({
+                self.write(cr, uid, ids, {
                     'nfe_status': protNFe["status_code"] + ' - ' +
                     protNFe["message"],
                     'nfe_date': datetime.datetime.now(),
@@ -197,9 +200,8 @@ class AccountInvoice(models.Model):
                 })
         return True
 
-    @api.multi
-    def button_cancel(self):
-
+    def button_cancel(self, cr, uid, ids, context=None):
+        # was api.multi
         document_serie_id = self.document_serie_id
         fiscal_document_id = self.document_serie_id.fiscal_document_id
         electronic = self.document_serie_id.fiscal_document_id.electronic
@@ -207,18 +209,18 @@ class AccountInvoice(models.Model):
 
         if ((document_serie_id and fiscal_document_id and not electronic) or
                 not nfe_protocol):
-            return super(AccountInvoice, self).action_cancel()
+            return super(AccountInvoice, self).action_cancel(cr, uid, ids, context=context)
         else:
-            result = self.env['ir.actions.act_window'].for_xml_id(
+            result = self.pool['ir.actions.act_window'].for_xml_id(
                 'nfe',
                 'action_nfe_invoice_cancel_form')
             return result
 
-    @api.multi
-    def cancel_invoice_online(self, justificative):
-        event_obj = self.env['l10n_br_account.document_event']
+    def cancel_invoice_online(self, cr, uid, ids, justificative, context=None):
+        # was api.multi
+        event_obj = self.pool['l10n_br_account.document_event']
 
-        for inv in self:
+        for inv in self.browse(cr, uid, ids, context=context):
             if inv.state in ('open', 'paid'):
 
                 validate_nfe_configuration(self.company_id)
@@ -241,7 +243,7 @@ class AccountInvoice(models.Model):
                         'state': 'done',
                         'document_event_ids': inv.id}
 
-                    self.attach_file_event(None, 'can', 'xml')
+                    self.attach_file_event(cr, uid, ids, None, 'can', 'xml', context=context)
 
                     for prot in processo.resposta.retEvento:
                         vals["status"] = prot.infEvento.cStat.valor
@@ -260,16 +262,16 @@ class AccountInvoice(models.Model):
                             result = super(AccountInvoice, self)\
                                 .action_cancel()
                             if result:
-                                self.write({'state': 'sefaz_cancelled',
+                                self.write(cr, uid, ids, {'state': 'sefaz_cancelled',
                                             'nfe_status': vals["status"] +
                                             ' - ' + vals["message"]
-                                            })
-                                obj_cancel = self.env[
+                                            }, context=context)
+                                obj_cancel = self.pool[
                                     'l10n_br_account.invoice.cancel']
-                                obj_cancel.create({
+                                obj_cancel.create(cr, uid, {
                                     'invoice_id': inv.id,
                                     'justificative': justificative,
-                                })
+                                }, context=context)
                     results.append(vals)
                 except Exception as e:
                     _logger.error(e.message, exc_info=True)
@@ -288,7 +290,7 @@ class AccountInvoice(models.Model):
                     results.append(vals)
                 finally:
                     for result in results:
-                        event_obj.create(result)
+                        event_obj.create(cr, uid, result, context=context)
 
             elif inv.state in ('sefaz_export', 'sefaz_exception'):
                 _logger.error(
@@ -297,10 +299,9 @@ class AccountInvoice(models.Model):
                 # TODO
         return
 
-    @api.multi
-    def invoice_print(self):
+    def invoice_print(self, cr, uid, ids, context=None):
 
-        for inv in self:
+        for inv in self.browse(cr, uid, ids, context=context):
 
             document_serie_id = inv.document_serie_id
             fiscal_document_id = inv.document_serie_id.fiscal_document_id
@@ -312,11 +313,11 @@ class AccountInvoice(models.Model):
             assert len(inv.ids) == 1, 'This option should only be ' \
                                       'used for a single id at a time.'
 
-            self.write({'sent': True})
+            self.write(cr, uid, ids, {'sent': True}, context=context)
             datas = {
                 'ids': inv.ids,
                 'model': 'account.invoice',
-                'form': self.read(inv.id)
+                'form': self.read(cr, uid, inv.id, context=context)
             }
 
             return {

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+        <record id="l10n_br_account_document_event_form" model="ir.ui.view">
+            <field name="name">l10n_br_account.document_event.form</field>
+            <field name="model">l10n_br_account.document_event</field>
+            <field name="arch" type="xml">
+                <form string="Eventos Eletronicos" version="7.0">
+                    <header>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,send,wait,done"/>
+                    </header>
+                    <group>
+                        <field name="type"/>
+                        <field name="company_id"/>
+                        <field name="response"/>
+                        <field name="origin"/>
+                        <field name="write_date"/>				
+                        <field name="file_sent"/>
+                        <field name="end_date"/>
+                        <field name="file_returned"/>
+                        <field name="status"/>
+                        <field name="message"/>
+                        <field name="state"/>
+                        <field name="document_event_ids"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+    </data>
+</openerp>

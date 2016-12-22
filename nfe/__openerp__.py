@@ -40,10 +40,13 @@
     """,
     'depends': [
         'account_cancel',
-        'l10n_br_account_product',
+        'account',
+        'l10n_br_product',
+        'l10n_br_account',
     ],
     'data': [
         'security/ir.model.access.csv',
+        '_l10n_br/l10n_br_account_document_status_sefaz_view.xml',
         'wizard/nfe_invoice_cancel_view.xml',
         'wizard/nfe_invoice_cce_view.xml',
         'wizard/nfe_invoice_cancel_view.xml',
@@ -53,6 +56,7 @@
         'views/res_partner_view.xml',
         'views/res_company_view.xml',
         'report/report_print_button_view.xml',
+        'models/l10n_br_account_migration_view.xml',
     ],
     'demo': [],
     'test': [],

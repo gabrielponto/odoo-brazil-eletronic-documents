@@ -17,12 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-from openerp import models, fields
+from openerp.osv import fields, osv
 
 
-class ResCompany(models.Model):
+class ResCompany(osv.osv):
     _inherit = 'res.company'
 
-    nfe_email = fields.Text('Observação em Email NFe')
-    nfe_logo = fields.Binary('NFe Logo')
-    nfe_logo_vertical = fields.Boolean('Logo na Vertical')
+    _columns = {
+        'nfe_email': fields.text('Observação em Email NFe'),
+        'nfe_logo': fields.binary('NFe Logo'),
+        'nfe_logo_vertical': fields.boolean('Logo na Vertical')
+    }

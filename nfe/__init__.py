@@ -19,5 +19,6 @@
 
 from . import sped
 from . import models
+from ._l10n_br import l10n_br_account_document_status_sefaz
 from . import wizard
 from . import report

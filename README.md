@@ -9,6 +9,8 @@ odoo-brazil-eletronic-documents
 
 Repositório com módulos para implementar todas as funcionalidades de NFe no OpenERP
 
+Portado para a versão 7.0 devido a necessidade de implementar em uma instalação já funcional do 7
+
 Versão 3.1
 
 Serviço | Status

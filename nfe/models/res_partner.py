@@ -21,23 +21,23 @@ from openerp.addons.nfe.sped.nfe.processing.xml import check_partner
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration
 import xml.etree.ElementTree as ET
-from openerp.osv import orm
+from openerp.osv import orm, fields, osv
 from openerp.tools.translate import _
-from openerp import models, fields, api
 
 
-class ResPartner(models.Model):
+class ResPartner(osv.osv):
     _inherit = 'res.partner'
 
-    habilitado_sintegra = fields.Boolean('Habilitado no Sintegra',
+    _columns = {
+        'habilitado_sintegra': fields.boolean('Habilitado no Sintegra',
                                          readonly=True)
+    }
 
-    @api.multi
-    def sefaz_check(self):
+    def sefaz_check(self, cr, uid, ids, context=None):
 
         validate_nfe_configuration(self.company_id)
 
-        for partner in self:
+        for partner in self.browse(cr, uid, ids, context=context):
             if partner.cnpj_cpf:
                 cnpj_cpf = partner.cnpj_cpf
 
@@ -89,5 +89,5 @@ class ResPartner(models.Model):
                     'state_id': state_id,
                     'habilitado_sintegra': info['cSit'],
                 }
-                partner.write(result)
+                partner.write(cr, uid, ids, result, context=context)
         return
