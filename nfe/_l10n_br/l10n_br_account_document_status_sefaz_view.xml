@@ -9,6 +9,7 @@
 					<field invisible="1" name="state"/>
 						<group>
 							<field name="chNFe" attrs="{'readonly':[('state','=','done')]}" />
+							<field name="company_id" attrs="{'readonly': [('state', '=', 'done')]}" required="1" />
 							<group states="done">			
 								<field name="version" />
 								<field name="nfe_environment" attrs="{'readonly': True}"/>

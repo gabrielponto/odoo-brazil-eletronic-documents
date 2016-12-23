@@ -41,7 +41,8 @@ class AccountInvoice(osv.osv):
 
     _columns = {
         'cce_document_event_ids': fields.one2many(
-        'l10n_br_account.invoice.cce', 'invoice_id', u'Eventos')
+        'l10n_br_account.invoice.cce', 'invoice_id', u'Eventos'),
+        'document_event_ids': fields.one2many('l10n_br_account.document_event', 'document_event_ids', u'Documentos Fiscais'),
     }
 
     def attach_file_event(self, cr, uid, ids, seq, att_type, ext, context=None):
@@ -64,7 +65,9 @@ class AccountInvoice(osv.osv):
     def nfe_export(self, cr, uid, ids, context=None):
 
         for inv in self.browse(cr, uid, ids):
-
+            # Força a exportação ser manual
+            inv.write({'state': 'sefaz_export'})
+            continue
             validate_nfe_configuration(inv.company_id)
 
             nfe_obj = self._get_nfe_factory(inv.nfe_version)
@@ -104,7 +107,7 @@ class AccountInvoice(osv.osv):
                     f.write(nfe_file)
                     f.close()
 
-                    event_obj = self.env['l10n_br_account.document_event']
+                    event_obj = self.pool['l10n_br_account.document_event']
                     event_obj.create(cr, uid, {
                         'type': '0',
                         'company_id': inv.company_id.id,
@@ -114,7 +117,7 @@ class AccountInvoice(osv.osv):
                         'state': 'draft',
                         'document_event_ids': inv.id
                     }, context=context)
-                    inv.write(cr, uid, [inv.id], {'state': 'sefaz_export'}, context=context)
+                    inv.write({'state': 'sefaz_export'})
 
     def action_invoice_send_nfe(self, cr, uid, ids, context=None):
 
@@ -187,7 +190,7 @@ class AccountInvoice(osv.osv):
             finally:
                 for result in results:
                     if result['type'] == '0':
-                        event_obj.write(cr, uid, [event_obj.id], result, context=context)
+                        event_obj.write(cr, uid, [event.id], result, context=context)
                     else:
                         event_obj.create(cr, uid, result, context=context)
 

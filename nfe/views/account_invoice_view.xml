@@ -28,6 +28,9 @@
 				</button>
 				<xpath expr="//button[@name='invoice_cancel']" position="replace">
 				</xpath>
+				<!--<field name="fiscal_document_related_ids" position="after">
+					<field name="document_event_ids" />
+				</field>-->
 			</field>
 		</record>
 	</data>

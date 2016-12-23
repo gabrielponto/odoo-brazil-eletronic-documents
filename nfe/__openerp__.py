@@ -43,6 +43,7 @@
         'account',
         'l10n_br_product',
         'l10n_br_account',
+        'l10n_br_compat',
     ],
     'data': [
         'security/ir.model.access.csv',

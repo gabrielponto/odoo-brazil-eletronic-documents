@@ -40,6 +40,7 @@ class L10n_brAccountDocumentStatusSefaz(orm.TransientModel):
         'protNFe': fields.text('Protocolo NFE', readonly=True),
         'retCancNFe': fields.text('Cancelamento NFE', readonly=True),
         'procEventoNFe': fields.text('Processamento Evento NFE', readonly=True),
+        'company_id': fields.many2one('res.company', string=u'Empresa')
     }
     _defaults = {
         'state': 'init',
@@ -49,7 +50,7 @@ class L10n_brAccountDocumentStatusSefaz(orm.TransientModel):
         data = self.read(cr, uid, ids, [], context=context)[0]
         #Call some method from l10n_br_account to check chNFE
         call_result = {
-            'version': '2.01',
+            'version': '3.10',
             'nfe_environment': '2',
             'xMotivo': '101',
             'cUF': 27,
@@ -59,12 +60,13 @@ class L10n_brAccountDocumentStatusSefaz(orm.TransientModel):
             'retCancNFe': '',
             'procEventoNFe': '',
             'state': 'done',
+            'company_id': data['company_id']
             }
         self.write(cr, uid, ids, call_result)
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
         result = mod_obj.get_object_reference(
-            cr, uid, 'l10n_br_product',
+            cr, uid, 'nfe',
             'action_l10n_br_account_product_document_status_sefaz')
         res_id = result and result[1] or False
         result = act_obj.read(cr, uid, res_id, context=context)

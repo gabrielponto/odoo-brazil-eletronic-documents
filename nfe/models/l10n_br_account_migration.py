@@ -279,7 +279,7 @@ class L10nBrAccountDocumentSerie(osv.Model):
 
 
 class L10nBrAccountInvoiceInvalidNumber(osv.Model):
-    _name = 'l10n_br_account.invoice.invalid.number'
+    _inherit = 'l10n_br_account.invoice.invalid.number'
     _description = u'Inutilização de Faixa de Numeração'
 
     def name_get(self, cr, uid, ids, context=None):

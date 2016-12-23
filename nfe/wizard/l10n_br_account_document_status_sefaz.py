@@ -27,37 +27,39 @@ class L10n_brAccountDocumentStatusSefaz(osv.TransientModel):
     _inherit = 'l10n_br_account.document_status_sefaz'
 
     def get_document_status(self, cr, uid, ids, context=None):
-        chave_nfe = self.chNFe
+        item = self.browse(cr, uid, ids[0], context=context)
+        chave_nfe = item.chNFe
 
-        try:
-            processo = check_key_nfe(self.write_uid.company_id, chave_nfe)
+        #try:
+        processo = check_key_nfe(item.company_id, chave_nfe)
 
-            call_result = {
-                'version': processo.resposta.versao.txt,
-                'xMotivo': processo.resposta.cStat.txt + ' - ' +
-                processo.resposta.xMotivo.txt,
-                'cUF': processo.resposta.cUF.txt,
-                'chNFe': processo.resposta.chNFe.txt,
-                'nfe_environment': processo.resposta.tpAmb.txt,
-                'protNFe': '' if processo.resposta.protNFe is None else
-                processo.resposta.protNFe.infProt.nProt.txt,
-                'retCancNFe': '',
-                'procEventoNFe': '',
-                'state': 'done',
-            }
+        call_result = {
+            'version': processo.resposta.versao.txt,
+            'xMotivo': processo.resposta.cStat.txt + ' - ' +
+            processo.resposta.xMotivo.txt,
+            'cUF': processo.resposta.cUF.txt,
+            'chNFe': processo.resposta.chNFe.txt,
+            'nfe_environment': processo.resposta.tpAmb.txt,
+            'protNFe': '' if processo.resposta.protNFe is None else
+            processo.resposta.protNFe.infProt.nProt.txt,
+            'retCancNFe': '',
+            'procEventoNFe': '',
+            'state': 'done',
+            'company_id': item.company_id.id,
+        }
+        self.write(cr, uid, ids, call_result, context=context)
 
-            self.write(cr, uid, ids, call_result, context=context)
-        except Exception as e:
+        #except Exception as e:
             # fixme:
-            raise orm.except_orm(
-                _(u'Erro na consulta da chave!'), e)
+        #    raise orm.except_orm(
+        #        _(u'Erro na consulta da chave!'), e)
 
         mod_obj = self.pool['ir.model.data']
         act_obj = self.pool['ir.actions.act_window']
-        result = mod_obj.get_object_reference('l10n_br_account_product',
+        result = mod_obj.get_object_reference(cr, uid, 'nfe',
                                               'action_l10n_br_account_product'
                                               '_document_status_sefaz')
         res_id = result and result[1] or False
-        result = act_obj.browse(cr, uid, ids, res_id, context=context)
-        result['res_id'] = ids[0]
+        result = act_obj.browse(cr, uid, res_id, context=context)
+        result.res_id = ids[0]
         return result

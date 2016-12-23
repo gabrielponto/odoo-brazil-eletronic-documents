@@ -23,13 +23,28 @@ from openerp.tools import config
 from openerp.tools.translate import _
 from openerp.addons.nfe._openerp.exceptions import RedirectWarning
 from openerp.addons.l10n_br_base.tools.misc import punctuation_rm
+import sys
+import appdirs
+import openerp.release as release
 
+def _get_default_datadir():
+    home = os.path.expanduser('~')
+    if os.path.exists(home):
+        func = appdirs.user_data_dir
+    else:
+        if sys.platform in ['win32', 'darwin']:
+            func = appdirs.site_data_dir
+        else:
+            func = lambda **kwarg: "/var/lib/%s" % kwarg['appname'].lower()
+    # No "version" kwarg as session and filestore paths are shared against series
+    return func(appname=release.product_name, appauthor=release.author)
 
 def mount_path_nfe(company, document='nfe'):
     db_name = company._cr.dbname
     cnpj = punctuation_rm(company.cnpj_cpf)
 
-    filestore = config.filestore(db_name)
+    #filestore = config.filestore(db_name)
+    filestore = os.path.join(_get_default_datadir(), 'filestore', db_name)
     nfe_path = '/'.join([filestore, 'PySPED', document, cnpj])
     if not os.path.exists(nfe_path):
         try:

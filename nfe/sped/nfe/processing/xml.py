@@ -42,6 +42,7 @@ def __processo(company):
     p.salvar_arquivos = True
     p.contingencia_SCAN = False
     p.caminho = mount_path_nfe(company)
+    p.versao = company.nfe_version
     return p
 
 
@@ -60,6 +61,7 @@ def monta_caminho_inutilizacao(
 def check_key_nfe(company, chave_nfe, nfe=False):
 
     p = __processo(company)
+    
     return p.consultar_nota(p.ambiente, chave_nfe, nfe)
 
 
@@ -141,10 +143,14 @@ def print_danfe(inv):
         from pysped.nfe.leiaute import ProcNFe_310
         procnfe = ProcNFe_310()
 
-    file_xml = monta_caminho_nfe(inv.company_id, inv.nfe_access_key)
-    if inv.state not in ('open', 'paid', 'sefaz_cancelled'):
-        file_xml = os.path.join(file_xml, 'tmp/')
-    procnfe.xml = os.path.join(file_xml, inv.nfe_access_key + '-nfe.xml')
+    # change name nfe
+
+    #file_xml = monta_caminho_nfe(inv.company_id, inv.nfe_access_key)
+    #if inv.state not in ('open', 'paid', 'sefaz_cancelled'):
+    #    file_xml = os.path.join(file_xml, 'tmp/')
+    
+    file_xml = inv.nfe_xml_path
+    procnfe.xml = file_xml
     danfe = DANFE()
     danfe.logo = add_backgound_to_logo_image(inv.company_id)
     danfe.NFe = procnfe.NFe
