@@ -203,23 +203,23 @@ class AccountInvoice(osv.osv):
                 })
         return True
 
-    def button_cancel(self, cr, uid, ids, context=None):
+    #def button_cancel(self, cr, uid, ids, context=None):
         # was api.multi
-        for invoice in self.browse(cr, uid, ids, context=context):
-            document_serie_id = invoice.document_serie_id
-            fiscal_document_id = invoice.document_serie_id.fiscal_document_id
-            electronic = invoice.document_serie_id.fiscal_document_id.electronic
-            #nfe_protocol = invoice.nfe_protocol_number
+    #    for invoice in self.browse(cr, uid, ids, context=context):
+    #        document_serie_id = invoice.document_serie_id
+    #        fiscal_document_id = invoice.document_serie_id.fiscal_document_id
+    #        electronic = invoice.document_serie_id.fiscal_document_id.electronic
+    #        #nfe_protocol = invoice.nfe_protocol_number
 
             #if ((document_serie_id and fiscal_document_id and not electronic) or
             #        not nfe_protocol):
-            if document_serie_id and fiscal_document_id and not electronic:
-                return super(AccountInvoice, self).action_cancel(cr, uid, ids, context=context)
-            else:
-                result = self.pool['ir.actions.act_window'].for_xml_id(
-                    'nfe',
-                    'action_nfe_invoice_cancel_form')
-                return result
+   #         if document_serie_id and fiscal_document_id and not electronic:
+   #             return super(AccountInvoice, self).action_cancel(cr, uid, ids, context=context)
+   #         else:
+   #             result = self.pool['ir.actions.act_window'].for_xml_id(
+   #                 'nfe',
+   #                 'action_nfe_invoice_cancel_form')
+   #             return result
 
     def cancel_invoice_online(self, cr, uid, ids, justificative, context=None):
         # was api.multi
