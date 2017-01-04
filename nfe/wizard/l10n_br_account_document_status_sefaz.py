@@ -20,7 +20,7 @@
 from openerp.osv import orm, osv
 from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.processing.xml import check_key_nfe
-
+from datetime import datetime
 
 class L10n_brAccountDocumentStatusSefaz(osv.TransientModel):
 
@@ -49,6 +49,19 @@ class L10n_brAccountDocumentStatusSefaz(osv.TransientModel):
         }
         self.write(cr, uid, ids, call_result, context=context)
 
+        # write on invoice
+        invoice_obj = self.pool['account.invoice']
+        if processo.resposta.cStat.txt in ('100', '150'):
+            call_result["state"] = 'open'
+        elif processo.resposta.cStat.txt in ('110', '301', '302'):
+            call_result["state"] = 'sefaz_denied'
+        else:
+            call_result['state'] = 'sefaz_export'
+        invoice_obj.write(cr, uid, invoice_obj.search(cr, uid, [('nfe_access_key', '=', chave_nfe)], context=context), {
+            'nfe_status': call_result['xMotivo'],
+            'nfe_date': datetime.now(),
+            'nfe_protocol_number': call_result['protNFe'],
+        })
         #except Exception as e:
             # fixme:
         #    raise orm.except_orm(
@@ -62,4 +75,16 @@ class L10n_brAccountDocumentStatusSefaz(osv.TransientModel):
         res_id = result and result[1] or False
         result = act_obj.browse(cr, uid, res_id, context=context)
         result.res_id = ids[0]
-        return result
+        return {
+            'name':result.name,
+            'view_mode': 'form',
+            'view_id': result.view_id.id,
+            'view_type': 'form',
+            'res_model': result.res_model,
+            'res_id': ids[0],
+            'type': 'ir.actions.act_window',
+            'nodestroy': True,
+            'target': 'new',
+            'domain': '[]',
+            'context': context
+        }
