@@ -383,32 +383,6 @@ class L10nBrAccountInvoiceInvalidNumber(osv.Model):
         return super(L10nBrAccountInvoiceInvalidNumber, self).unlink()
 
 
-class L10nBrAccountPartnerFiscalType(osv.Model):
-    _name = 'l10n_br_account.partner.fiscal.type'
-    _description = 'Tipo Fiscal de Parceiros'
-
-    _columns = {
-        'code': fields.char(u'Código', size=16, required=True),
-        'name': fields.char(u'Descrição', size=64),
-        'is_company': fields.boolean(u'Pessoa Jurídica?'),
-        'default': fields.boolean(u'Tipo Fiscal Padrão', default=True),
-        'icms': fields.boolean('Recupera ICMS'),
-        'ipi': fields.boolean('Recupera IPI')
-    }
-
-    @api.constrains('default', 'is_company')
-    def _check_default(self):
-        for fiscal_type in self:
-            if len(fiscal_type.search([
-                    ('default', '=', 'True'),
-                    ('is_company', '=', fiscal_type.is_company)
-            ])) > 1:
-                raise UserError(
-                    _(u'Mantenha apenas um tipo fiscal padrão'
-                      u' para Pessoa Física ou para Pessoa Jurídica!'))
-            return True
-
-
 class L10nBrAccountPartnerSpecialFiscalType(osv.Model):
     _name = 'l10n_br_account.partner.special.fiscal.type'
     _description = 'Regime especial do parceiro'
