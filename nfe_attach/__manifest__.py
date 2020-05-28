@@ -1,7 +1,7 @@
-# coding: utf-8
+# -*- encoding: utf-8 -*-
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
+# Copyright (C) 2014  KMEE - www.kmee.com.br - Luis Felipe Miléo              #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU Affero General Public License as published by #
@@ -11,28 +11,31 @@
 # This program is distributed in the hope that it will be useful,             #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of              #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU Affero General Public License for more details.                         #
+# GNU General Public License for more details.                                #
 #                                                                             #
-# You should have received a copy of the GNU Affero General Public License    #
+# You should have received a copy of the GNU General Public License           #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
-#                                                                             #
 ###############################################################################
 
 {
-    'name': 'Importação de XML Diretamente do Manifesto',
-    'version': '8.0.0.0.0',
-    'category': 'NFE',
-    'author': 'Danimar Ribeiro - Trustcode, Odoo Community Association (OCA)',
+    'name': 'NFE XML',
+    'version': '8.0.1.0.0',
+    'category': 'Generic Modules',
+    'description': """Salva o danfe e xml em anexo a fatura e permite o
+        envio dos documentos anexados para o email do cliente""",
+    'author': 'KMEE',
     'license': 'AGPL-3',
-    'website': 'http://www.odoobrasil.org.br',
+    'website': 'http://www.kmee.com.br',
     'depends': [
-        'nfe_import',
-        'nfe_mde',
+        'document',
+        'nfe',
     ],
     'data': [
-        'views/nfe_mde_view.xml',
-        'report/report_danfe.xml',
-        'wizard/wizard_nfe_import_xml_view.xml',
+        'data/nfe_attach_email.xml',
+        'wizard/nfe_xml_periodic_export.xml',
     ],
-    'installable': True
+    'demo': [],
+    'test': [],
+    'installable': False,
+    'active': False,
 }

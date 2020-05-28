@@ -118,10 +118,10 @@ class NFeSerializer(object):
         res['fiscal_document_id'] = \
             fiscal_doc_ids[0].id if fiscal_doc_ids else False
 
-        res['vendor_serie'] = str(self.nfe.infNFe.ide.serie.valor)
+        res['serie_nfe'] = str(self.nfe.infNFe.ide.serie.valor)
         res['supplier_invoice_number'] = self.nfe.infNFe.ide.nNF.valor
         res['internal_number'] = (
-            "{cnpj}:{vendor_serie}:{supplier_invoice_number}".format(
+            "{cnpj}:{serie_nfe}:{supplier_invoice_number}".format(
                 cnpj=self.nfe.infNFe.emit.CNPJ.valor, **res
             )
         )
@@ -382,7 +382,8 @@ class NFeSerializer(object):
         inv_line['freight_value'] = float(self.det.prod.vFrete.valor)
         inv_line['insurance_value'] = float(self.det.prod.vSeg.valor)
         inv_line['discount'] = (
-            (float(self.det.prod.vDesc.valor)/inv_line['price_gross']) * 100)
+            (float(self.det.prod.vDesc.valor)/inv_line['price_gross']) * 100)\
+            if inv_line['price_gross'] else float(0)
         inv_line['other_costs_value'] = float(self.det.prod.vOutro.valor)
 
         # Código do serviço não vai existir se for produto
